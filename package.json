@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:classRank",
+    "onView:classesView",
     "onLanguage:cpp",
     "onCommand:classRank.refreshEntry"
   ],
@@ -28,16 +28,22 @@
     "views": {
       "classes-view": [
         {
+          "id": "filterView",
+          "type": "webview",
+          "name": "Filter"
+          
+        },
+        {
           "id": "classesView",
-          "name": "Classes",
-          "icon": "media/ClassRank.svg"
+          "type": "tree",
+          "name": "Classes"
         }
       ]
     },
     "commands": [
       {
         "command": "classRank.refreshEntry",
-        "title": "Refresh",
+        "title": "Class Rank: Refresh",
         "icon": {
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"

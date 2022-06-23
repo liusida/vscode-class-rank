@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import {ClassRankDataProvider} from './classRankDataProvider';
+import { FilterProvider } from './filterProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "classrank" is now active!');
@@ -16,9 +17,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const dataProvider = new ClassRankDataProvider(rootPaths);
 	vscode.window.registerTreeDataProvider('classesView', dataProvider);
+	dataProvider.refresh();
+	
+	const filterProvider = new FilterProvider(context.extensionUri);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider("filterView", filterProvider)
+	);
 
-	vscode.commands.registerCommand('classRank.refreshEntry', () => dataProvider.refresh());
-
+	context.subscriptions.push(
+		vscode.commands.registerCommand('classRank.refreshEntry', () => {
+			dataProvider.refresh();
+		})
+	);
 
 }
 
