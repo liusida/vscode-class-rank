@@ -1,45 +1,87 @@
 {
   "name": "classrank",
-	"displayName": "ClassRank",
-	"description": "Ranking classes in source code, C++ by default, to provide an overview of a software project.",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.68.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-        "onCommand:classrank.helloWorld"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "classrank.helloWorld",
-				"title": "Hello World"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/vscode": "^1.68.0",
-		"@types/glob": "^7.2.0",
-		"@types/mocha": "^9.1.1",
-		"@types/node": "16.x",
-		"@typescript-eslint/eslint-plugin": "^5.27.0",
-		"@typescript-eslint/parser": "^5.27.0",
-		"eslint": "^8.16.0",
-		"glob": "^8.0.3",
-		"mocha": "^10.0.0",
-		"typescript": "^4.7.2",
-		"@vscode/test-electron": "^2.1.3"
-	}
+  "displayName": "ClassRank",
+  "description": "Ranking classes in source code, C++ by default, to provide an overview of a software project.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.68.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:classRank",
+    "onLanguage:cpp",
+    "onCommand:classRank.refreshEntry"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "classes-view",
+          "title": "Class Rank",
+          "icon": "media/ClassRank.svg"
+        }
+      ]
+    },
+    "views": {
+      "classes-view": [
+        {
+          "id": "classesView",
+          "name": "Classes",
+          "icon": "media/ClassRank.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "classRank.refreshEntry",
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "classRank.refreshEntry",
+          "when": "view == classesView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "title": "Class Rank",
+        "properties": {
+          "classesView.rootPaths": {
+            "type": "Array<string>",
+            "default": false
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+	"@types/mkdirp": "^0.5.2",
+	"@types/node": "^16.11.7",
+	"@types/rimraf": "^2.0.2",
+	"@types/vscode": "^1.67.0",
+	"@typescript-eslint/eslint-plugin": "^5.19.0",
+	"@typescript-eslint/parser": "^5.19.0",
+	"eslint": "^8.13.0",
+	"typescript": "^4.7.2"
+  }
+
 }
