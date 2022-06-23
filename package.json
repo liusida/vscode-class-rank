@@ -28,12 +28,6 @@
     "views": {
       "classes-view": [
         {
-          "id": "filterView",
-          "type": "webview",
-          "name": "Filter"
-          
-        },
-        {
           "id": "classesView",
           "type": "tree",
           "name": "Classes"

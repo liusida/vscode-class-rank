@@ -1,17 +1,17 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
+import {MyItem, SourceCodeReference, SourceCodeClass} from './myItem';
+import {Utils} from './utils';
 
 export class ClassRankDataProvider implements vscode.TreeDataProvider<MyItem> {
-
-    private _classes : string[];
+    private _data : Map<string, number> = new Map<string, number>();
+    private _canceled : boolean = false;
     private _onDidChangeTreeData: vscode.EventEmitter<MyItem | undefined | null | void> = new vscode.EventEmitter<MyItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<MyItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
 
 	constructor(private rootPaths: Array<string>) {
         console.log(`rootPaths: ${rootPaths}`);
-        this._classes = [];
 	}
 
 	getTreeItem(element: MyItem): vscode.TreeItem {
@@ -26,94 +26,91 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyItem> {
             console.log(`We are getting children for ${element.label}`);
             return Promise.resolve([new SourceCodeReference("path/to/filename.cpp")]);
 		} else {
+            //root
             console.log("if element is undefined, then we are getting children for the root");
+
+            const mapSorted = new Map([...this._data.entries()].sort((a, b) => b[1] - a[1]));
+
             let ret = [];
-            for (const s of this._classes) {
-                ret.push(new SourceCodeClass(s, 1));
+            for (let [className, refCount] of mapSorted) {
+                ret.push(new SourceCodeClass(className, refCount));
             }
             return Promise.resolve(ret);
 		}
 	}
 
-    // Rebuild the cache file and reload cache file in.
-    async refresh() {
+    refresh() {
         console.log("Refresh start.");
-        this._classes = [];
 
-        let pattern = /class .*_API ([A-Z0-9]*) : public [A-Z0-9]*/i;
-
-        const headerFiles = await vscode.workspace.findFiles('**/*.h');
-        for (const headerFile of headerFiles) {
-            // console.log("Parsing: ");
-            // console.log(headerFile.fsPath);
-            let fileContent = fs.readFileSync(headerFile.fsPath, 'utf-8');
-            let m = fileContent.match(pattern);
-            if (m) {
-                // console.log(m);
-                this._classes.push(m[1]);
-                
-            }
-            // const content = await vscode.workspace.fs.readFile(headerFile);
-            // console.log(content);
-            // pattern.exec(content);
-            // this._classes.push(headerFile.fsPath);
-            // We need to find something like this:
-            // class WHATEVER AEmptyRefGameModeBase : public WhatEver
-            // or
-            // class WHATEVER AEmptyRefGameModeBase
-
-            // Regex: /class .*_API [A-Z0-9]* : public [A-Z0-9]*/i
+        vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Scanning all files",
+			cancellable: true
+		}, async (progress, token) => {
             
+            this._canceled = false;
 
-        }
+			token.onCancellationRequested(() => {
+				console.log("User canceled the long running operation");
+                this._canceled = true; 
+			});
+
+			progress.report({ increment: 0 , message: "Please wait..."});
+
+            let classNamePattern = /class .*_API ([A-Z0-9]*) : public [A-Z0-9]*/i;
+
+            const allFileNames = await vscode.workspace.findFiles('**/*.{c,h,cpp,hpp}');
+            allFileNames.sort();
+            let allFileContentHuge = [];
+
+            for (const headerFile of allFileNames) {
+                let fileContent = fs.readFileSync(headerFile.fsPath, 'utf-8');
+                allFileContentHuge.push(fileContent);
+
+                let m = fileContent.match(classNamePattern);
+                if (m) {
+                    this._data.set(m[1], 0);
+                }
+            }
+
+			progress.report({increment: 0, message: `${allFileNames.length} files read to memory. Start searching references...`});
+            await Utils.delay(10);
+
+            console.log(`allFileContentHuge.length = ${allFileContentHuge.length}`);
+            let hitCount = 0;
+            let fileProcessed = 0;
+            for (const index in allFileContentHuge) {
+                const fileContent = allFileContentHuge[index];
+                const filename = allFileNames[index];
+                for (const className of this._data.keys()) {
+                    let r = new RegExp(`[^a-zA-Z0-9](${className})[^a-zA-Z0-9]`);
+                    let m = fileContent.match(r);
+                    if (m) {
+                        hitCount++;
+                        this._data.set(className, this._data.get(className)!+1);
+                    }    
+                }
+                fileProcessed++;
+                const reportEverySteps = 500;
+                if (fileProcessed%reportEverySteps===0) {
+                    const percentage = Math.floor(100 * reportEverySteps / allFileNames.length);
+
+                    console.log(`${fileProcessed} / ${allFileNames.length} files scanned. ${hitCount} hit.`);
+                    progress.report({increment: percentage, message: `${fileProcessed} / ${allFileNames.length} files scanned. ${hitCount} hit.` });
+                    await Utils.delay(10);
+                }
+                if (this._canceled) {
+                    console.log("Canceled by user.");
+                    return;
+                }
+            }
+            return;
+        });
+
         this._onDidChangeTreeData.fire();
+        console.log("Refreshed. All classes loaded.");
 
-        // if (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0)) {
-        //     for (const folder of vscode.workspace.workspaceFolders) {
-        //         console.log(`Processing ${folder.uri}`);
-        //         // let p : vscode.GlobPattern = new vscode.GlobPattern();
-        //         // for (const [name, type] of await vscode.workspace.fs.readDirectory(vscode.Uri.file(path.posix.dirname(rootPath)))) {
-        //         //     console.log(name);
-        //         // }            
-        //     }
-        // }
-        console.log("Refreshed.");
+
     }
-}
-
-// My customized base class of TreeItem
-class MyItem extends vscode.TreeItem {
-    type : string;
-    constructor(label: string, collapsibleState: vscode.TreeItemCollapsibleState) {
-        super(label, collapsibleState);
-        this.type = '';
-    }
-}
-
-export class SourceCodeClass extends MyItem {
-    constructor(className: string, refCount: number) {
-        super(className, vscode.TreeItemCollapsibleState.Collapsed);
-        this.type = 'class';
-        this.description = `(${refCount})`;
-        this.iconPath = {
-            light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
-            dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
-        };
-    }
-
-}
-
-
-export class SourceCodeReference extends MyItem {
-    constructor(refPath: string) {
-        super(refPath, vscode.TreeItemCollapsibleState.None);
-        this.type = 'ref';
-        this.iconPath = {
-            light: path.join(__filename, '..', '..', 'resources', 'light', 'boolean.svg'),
-            dark: path.join(__filename, '..', '..', 'resources', 'dark', 'boolean.svg')
-        };
-    }
-
-
 }
 
