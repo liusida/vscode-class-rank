@@ -4,6 +4,8 @@ import { FilterProvider } from './filterProvider';
 
 
 export function activate(context: vscode.ExtensionContext) {
+	
+
 	console.log('Congratulations, your extension "classrank" is now active!');
 
 	const dataProvider = new ClassRankDataProvider();
@@ -25,10 +27,12 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('classRank.openRef', (args) => {
-			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(args));
-			console.log("Helo");
-			console.log(args);
+		vscode.commands.registerCommand('classRank.openRef', (argFilename, argClassName) => {
+			vscode.window.showTextDocument(vscode.Uri.file(argFilename)).then(()=>{
+				vscode.commands.executeCommand("editor.actions.findWithArgs", {"searchString": argClassName, "wholeWord": true, "matchCase": true}).then(()=>{
+					vscode.commands.executeCommand("editor.action.nextMatchFindAction");
+				});
+			});
 		})
 	);
 

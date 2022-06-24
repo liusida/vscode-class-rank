@@ -2,24 +2,24 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 
 // My customized base class of TreeItem
-export class MyItem extends vscode.TreeItem {
+export class MyTreeItem extends vscode.TreeItem {
     public className : string = "";
     public type : string;
-    constructor(label: string, collapsibleState: vscode.TreeItemCollapsibleState) {
+    constructor(className: string, label: string, collapsibleState: vscode.TreeItemCollapsibleState) {
         super(label, collapsibleState);
         this.type = '';
+        this.className = className;
     }
 }
 
-export class SourceCodeClass extends MyItem {
-    constructor(className: string, refCount: number | undefined) {
-        super(className, vscode.TreeItemCollapsibleState.Collapsed);
-        this.className = className;
+export class SourceCodeClass extends MyTreeItem {
+    constructor(className: string, refCount: number, parentClass: string) {
+        super(className, className, vscode.TreeItemCollapsibleState.Collapsed);
         if (!refCount) {
             refCount = 0;
         }
         this.type = 'class';
-        this.description = `(${refCount})`;
+        this.description = `: ${parentClass} (${refCount})`;
         this.iconPath = {
             light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
             dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
@@ -29,10 +29,10 @@ export class SourceCodeClass extends MyItem {
 }
 
 
-export class SourceCodeReference extends MyItem {
+export class SourceCodeReference extends MyTreeItem {
     public _refPath: string = "";
-    constructor(refPath: string) {
-        super(refPath, vscode.TreeItemCollapsibleState.None);
+    constructor(className: string, refPath: string) {
+        super(className, refPath, vscode.TreeItemCollapsibleState.None);
         this.type = 'ref';
         this._refPath = refPath;
         this.iconPath = {
