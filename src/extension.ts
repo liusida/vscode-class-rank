@@ -6,26 +6,31 @@ import { FilterProvider } from './filterProvider';
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "classrank" is now active!');
 
-	let rootPaths : Array<string> = [];
-	if (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0)) {
-		rootPaths.push(vscode.workspace.workspaceFolders[0].uri.fsPath);
-
-	}
-	console.log(rootPaths);
-
-	// just analyze rootPath for now.
-	// later we can add other paths from settings.
-
-	const dataProvider = new ClassRankDataProvider(rootPaths);
+	const dataProvider = new ClassRankDataProvider();
 	vscode.window.registerTreeDataProvider('classesView', dataProvider);
-	dataProvider.refresh();
+	try {
+		dataProvider.refresh();
+	} catch(err) {
+		console.log("Error in dataProvider.refresh()");
+	}
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('classRank.refreshEntry', async () => {
-			dataProvider.refresh();
+		vscode.commands.registerCommand('classRank.refreshEntry', () => {
+			try {
+				dataProvider.refresh(true);
+			} catch(err) {
+				console.log("Error in dataProvider.refresh()");
+			}
 		})
 	);
 
+	context.subscriptions.push(
+		vscode.commands.registerCommand('classRank.openRef', (args) => {
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(args));
+			console.log("Helo");
+			console.log(args);
+		})
+	);
 
 }
 
