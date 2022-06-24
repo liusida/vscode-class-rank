@@ -2,7 +2,6 @@
 
 ![screenshot](media/screenshot.png)
 
-![screenshot](media/progress.png)
 
 ## Motivation
 
