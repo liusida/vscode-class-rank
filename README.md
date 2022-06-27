@@ -1,6 +1,6 @@
 # ClassRank, A VSCode Extension for reading large project.
 
-![screenshot](media/screenshot.png)
+![screenshot](./media/screenshot.png)
 
 
 ## Motivation
@@ -71,3 +71,7 @@ class FNvClothErrorCallback* GNvClothErrorCallback;
 	class FrameProTLS;
 		Class CurrentClass = self.class;
 ```
+
+## Issues
+
+There's only one copy of cache, so different workspace shares the same cache file (which is wrong).
