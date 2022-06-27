@@ -13,17 +13,20 @@ export class MyTreeItem extends vscode.TreeItem {
 }
 
 export class SourceCodeClass extends MyTreeItem {
-    constructor(className: string, refCount: number, parentClass: string) {
+    headerFile : string;
+    constructor(className: string, refCount: number, parentClass: string, headerFile: string) {
         super(className, className, vscode.TreeItemCollapsibleState.Collapsed);
         if (!refCount) {
             refCount = 0;
         }
         this.type = 'class';
         this.description = `: ${parentClass} (${refCount})`;
+        this.headerFile = headerFile;
         this.iconPath = {
             light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
             dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
         };
+        this.contextValue = "class";
     }
 
 }
@@ -32,13 +35,28 @@ export class SourceCodeClass extends MyTreeItem {
 export class SourceCodeReference extends MyTreeItem {
     public _refPath: string = "";
     constructor(className: string, refPath: string) {
-        super(className, refPath, vscode.TreeItemCollapsibleState.None);
+        let strPath = '';
+        if (vscode.workspace.workspaceFolders) {
+            for (let folder of vscode.workspace.workspaceFolders!) {
+                if (refPath.includes(folder.uri.fsPath.toString())) {
+                    strPath = refPath.replace(folder.uri.fsPath.toString(), '');
+                    break;
+                }
+            }
+        }
+        if (strPath==='') {
+            strPath = refPath;
+        }
+
+        super(className, strPath, vscode.TreeItemCollapsibleState.None);
         this.type = 'ref';
-        this._refPath = refPath;
         this.iconPath = {
             light: path.join(__filename, '..', '..', 'resources', 'light', 'boolean.svg'),
             dark: path.join(__filename, '..', '..', 'resources', 'dark', 'boolean.svg')
         };
+
+        this._refPath = refPath;
+
     }
 
 

@@ -20,6 +20,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
     // Map < className, refList >
     private _dataRefList : Map<string, [string]> = new Map<string, [string]>();
     private _dataParentClass : Map<string, string> = new Map<string, string>();
+    private _dataHeaderFile: Map<string, string> = new Map<string, string>();
 
     private _canceled : boolean = false;
     private _cacheFilenamePrefix : string = ".CLASSRANK.DATA.";
@@ -66,7 +67,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 
             let ret = [];
             for (let [className, refCount] of mapSorted) {
-                ret.push(new SourceCodeClass(className, refCount, this._dataParentClass.get(className)!));
+                ret.push(new SourceCodeClass(className, refCount, this._dataParentClass.get(className)!, this._dataHeaderFile.get(className)! ));
             }
             return Promise.resolve(ret);
 		}
@@ -79,6 +80,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
         this._dataRefCount = new Map<string, number>();
         this._dataRefList =  new Map<string, [string]>();
         this._dataParentClass =  new Map<string, string>();
+        this._dataHeaderFile = new Map<string, string>();
 
 
         if (!force) {
@@ -119,9 +121,11 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             allFileNames.sort();
 
             let allFileContentInMemory = [];
+            let allFilenameInMemory = [];
             for (const headerFile of allFileNames) {
                 let fileContent = fs.readFileSync(headerFile.fsPath, 'utf-8');
                 allFileContentInMemory.push(fileContent);
+                allFilenameInMemory.push(headerFile.fsPath);
 
                 let matches = fileContent.match(classNamePattern);
                 if (matches) {
@@ -130,6 +134,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
                         if (singleLineMatches) {
                             this._dataRefCount.set(singleLineMatches[1], 0);
                             this._dataParentClass.set(singleLineMatches[1], singleLineMatches[2]);
+                            this._dataHeaderFile.set(singleLineMatches[1], headerFile.fsPath);
                         }
                     }
                 }
@@ -199,6 +204,9 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
         fs.writeFileSync(this._cacheFilenamePrefix + "ParentClass", content);
         console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "ParentClass")}`);
 
+        content =  JSON.stringify(Object.fromEntries(this._dataHeaderFile));
+        fs.writeFileSync(this._cacheFilenamePrefix + "HeaderFile", content);
+        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "HeaderFile")}`);
     }
     loadFromCache() : boolean {
         if(fs.existsSync(this._cacheFilenamePrefix + "RefCount") &&
@@ -223,6 +231,11 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
                 this._dataParentClass.set(value, cacheParentClass[value]);
             }
 
+            let cacheHeaderFile = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "HeaderFile").toString());
+            for (var value in cacheHeaderFile) {  
+                this._dataHeaderFile.set(value, cacheHeaderFile[value]);
+            }
+                        
             this._onDidChangeTreeData.fire();
             return true;
         } else {

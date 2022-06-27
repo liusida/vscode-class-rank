@@ -46,6 +46,14 @@
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
         }
+      },
+      {
+        "command": "classRank.gotoHeaderFile",
+        "title": "Class Rank: Go to Header File",
+        "icon": {
+          "light": "resources/light/edit.svg",
+          "dark": "resources/dark/edit.svg"
+        }
       }
     ],
     "menus": {
@@ -54,6 +62,13 @@
           "command": "classRank.refreshEntry",
           "when": "view == classesView",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "classRank.gotoHeaderFile",
+          "when": "viewItem == class",
+          "group": "inline"
         }
       ]
     },

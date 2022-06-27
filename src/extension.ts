@@ -27,6 +27,17 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
+		vscode.commands.registerCommand('classRank.gotoHeaderFile', (args) => {
+			vscode.window.showTextDocument(vscode.Uri.file(args.headerFile)).then(()=>{
+				vscode.commands.executeCommand("editor.actions.findWithArgs", {"searchString": `${args.className} :`, "wholeWord": true, "matchCase": true}).then(()=>{
+					vscode.commands.executeCommand("editor.action.nextMatchFindAction");
+				});
+			});
+		})
+	);
+	
+
+	context.subscriptions.push(
 		vscode.commands.registerCommand('classRank.openRef', (argFilename, argClassName) => {
 			vscode.window.showTextDocument(vscode.Uri.file(argFilename)).then(()=>{
 				vscode.commands.executeCommand("editor.actions.findWithArgs", {"searchString": argClassName, "wholeWord": true, "matchCase": true}).then(()=>{
