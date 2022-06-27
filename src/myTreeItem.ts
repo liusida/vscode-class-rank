@@ -26,6 +26,7 @@ export class SourceCodeClass extends MyTreeItem {
             light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
             dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
         };
+        // this.iconPath = vscode.ThemeIcon.File;
         this.contextValue = "class";
     }
 
@@ -34,12 +35,13 @@ export class SourceCodeClass extends MyTreeItem {
 
 export class SourceCodeReference extends MyTreeItem {
     public _refPath: string = "";
+    
     constructor(className: string, refPath: string) {
         let strPath = '';
         if (vscode.workspace.workspaceFolders) {
             for (let folder of vscode.workspace.workspaceFolders!) {
                 if (refPath.includes(folder.uri.fsPath.toString())) {
-                    strPath = refPath.replace(folder.uri.fsPath.toString(), '');
+                    strPath = folder.name + refPath.replace(folder.uri.fsPath.toString(), '');
                     break;
                 }
             }
@@ -50,11 +52,9 @@ export class SourceCodeReference extends MyTreeItem {
 
         super(className, strPath, vscode.TreeItemCollapsibleState.None);
         this.type = 'ref';
-        this.iconPath = {
-            light: path.join(__filename, '..', '..', 'resources', 'light', 'boolean.svg'),
-            dark: path.join(__filename, '..', '..', 'resources', 'dark', 'boolean.svg')
-        };
-
+        this.iconPath = vscode.ThemeIcon.File;
+        // this.contextValue = "file";
+        this.resourceUri = vscode.Uri.file( refPath );
         this._refPath = refPath;
 
     }
