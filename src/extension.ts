@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
+import { ClassHierarchyDataProvider } from './classHierarchyDataProvider';
 import {ClassRankDataProvider} from './classRankDataProvider';
 import { FilterProvider } from './filterProvider';
 
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	
 
 	console.log('Congratulations, your extension "classrank" is now active!');
@@ -11,15 +12,20 @@ export function activate(context: vscode.ExtensionContext) {
 	const dataProvider = new ClassRankDataProvider();
 	vscode.window.registerTreeDataProvider('classesView', dataProvider);
 	try {
-		dataProvider.refresh();
+		await dataProvider.refresh();
 	} catch(err) {
 		console.log("Error in dataProvider.refresh()");
 	}
+	const hierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
+	hierarchyDataProvider.test();
+	vscode.window.registerTreeDataProvider('hierarchyView', hierarchyDataProvider);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('classRank.refreshEntry', () => {
+		vscode.commands.registerCommand('classRank.refreshEntry', async () => {
 			try {
-				dataProvider.refresh(true);
+				await dataProvider.refresh(true);
+				const hierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
+				vscode.window.registerTreeDataProvider('hierarchyView', hierarchyDataProvider);
 			} catch(err) {
 				console.log("Error in dataProvider.refresh()");
 			}

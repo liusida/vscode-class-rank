@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import {MyTreeItem, SourceCodeReference, SourceCodeClass} from './myTreeItem';
+import {DataBackend} from './dataBackend';
 import {Utils} from './utils';
 
 
@@ -15,13 +16,7 @@ interface IParentClass {
     [key: string]: [string];
 }
 export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
-    // Map < className, refCount >
-    private _dataRefCount : Map<string, number> = new Map<string, number>();
-    // Map < className, refList >
-    private _dataRefList : Map<string, [string]> = new Map<string, [string]>();
-    private _dataParentClass : Map<string, string> = new Map<string, string>();
-    private _dataHeaderFile: Map<string, string> = new Map<string, string>();
-
+    private dataBackend:DataBackend;
     private _canceled : boolean = false;
     private _cacheFilenamePrefix : string = ".CLASSRANK.DATA.";
 
@@ -29,7 +24,12 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
     readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
 
-	constructor() {
+	constructor(backend?: DataBackend | undefined) {
+        if (backend) {
+            this.dataBackend = backend;
+        } else {
+            this.dataBackend = new DataBackend();
+        }
 	}
 
 	getTreeItem(element: MyTreeItem): vscode.TreeItem {
@@ -52,7 +52,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 		if (element) {
             console.log(`We are getting children for ${element.className}`);
             let ret = [];
-            let list = this._dataRefList.get(element.className);
+            let list = this.dataBackend._dataRefList.get(element.className);
             if (list) {
                 for (let refPath of list) {
                     ret.push(new SourceCodeReference(element.className, refPath));
@@ -63,24 +63,28 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             //root
             console.log("if element is undefined, then we are getting children for the root");
 
-            const mapSorted = new Map([...this._dataRefCount.entries()].sort((a, b) => b[1] - a[1]));
+            const mapSorted = new Map([...this.dataBackend._dataRefCount.entries()].sort((a, b) => b[1] - a[1]));
 
             let ret = [];
             for (let [className, refCount] of mapSorted) {
-                ret.push(new SourceCodeClass(className, refCount, this._dataParentClass.get(className)!, this._dataHeaderFile.get(className)! ));
+                ret.push(new SourceCodeClass(className, refCount, this.dataBackend._dataParentClass.get(className)!, this.dataBackend._dataHeaderFile.get(className)! ));
             }
             return Promise.resolve(ret);
 		}
 	}
-
-    refresh(force? : boolean | undefined) {
+    
+    getDataBackend():DataBackend {
+        return this.dataBackend;
+    }
+    
+    async refresh(force? : boolean | undefined) {
         console.log("Refresh start.");
 
         // clear the memory
-        this._dataRefCount = new Map<string, number>();
-        this._dataRefList =  new Map<string, [string]>();
-        this._dataParentClass =  new Map<string, string>();
-        this._dataHeaderFile = new Map<string, string>();
+        this.dataBackend._dataRefCount = new Map<string, number>();
+        this.dataBackend._dataRefList =  new Map<string, [string]>();
+        this.dataBackend._dataParentClass =  new Map<string, string>();
+        this.dataBackend._dataHeaderFile = new Map<string, string>();
 
 
         if (!force) {
@@ -91,7 +95,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             }
         }
 
-        vscode.window.withProgress({
+        await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: "Scanning all files",
             cancellable: true
@@ -113,8 +117,8 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             // (3) class ClassName
             // etc...
             // Maybe I should get a C++ parser.
-            let classNamePattern = /\n\s*class\s+[A-Z_]*_API\s+([a-zA-Z0-9_]+)\s+:\s+public\s+([a-zA-Z0-9_]+)/g;
-            let classNamePatternItem = /\n\s*class\s+[A-Z_]*_API\s+([a-zA-Z0-9_]+)\s+:\s+public\s+([a-zA-Z0-9_]+)/;
+            let classNamePattern = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/g;
+            let classNamePatternItem = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/;
             let sourceFileNamePattern = '**/*.{c,h,cpp,hpp}';
             let excludeFileNamePattern = '**/{Intermediate/**,*.gen.*}';
             const allFileNames = await vscode.workspace.findFiles(sourceFileNamePattern, excludeFileNamePattern);
@@ -132,15 +136,15 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
                     for (let m of matches) {
                         let singleLineMatches = m.match(classNamePatternItem);
                         if (singleLineMatches) {
-                            this._dataRefCount.set(singleLineMatches[1], 0);
-                            this._dataParentClass.set(singleLineMatches[1], singleLineMatches[2]);
-                            this._dataHeaderFile.set(singleLineMatches[1], headerFile.fsPath);
+                            this.dataBackend._dataRefCount.set(singleLineMatches[1], 0);
+                            this.dataBackend._dataParentClass.set(singleLineMatches[1], singleLineMatches[2]);
+                            this.dataBackend._dataHeaderFile.set(singleLineMatches[1], headerFile.fsPath);
                         }
                     }
                 }
             }
             
-            progress.report({increment: 0, message: `${allFileNames.length} files read to memory. ${this._dataRefCount.size} classes found. Start searching references...`});
+            progress.report({increment: 0, message: `${allFileNames.length} files read to memory. ${this.dataBackend._dataRefCount.size} classes found. Start searching references...`});
             await Utils.delay(10);
 
             console.log(`allFileContentInMemory.length = ${allFileContentInMemory.length}`);
@@ -151,18 +155,18 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
                 const filename = allFileNames[index];
                 // for each file, check all possible classes.
                 // TODO: should we bundle the search, like search 50 class names at a time? will that save time?
-                for (const className of this._dataRefCount.keys()) {
+                for (const className of this.dataBackend._dataRefCount.keys()) {
                     let r = new RegExp(`[^a-zA-Z0-9](${className})[^a-zA-Z0-9]`);
                     let m = fileContent.match(r);
                     if (m) {
                         hitCount++;
-                        const list = this._dataRefList.get(className);
+                        const list = this.dataBackend._dataRefList.get(className);
                         if (list) {
                             list!.push(filename.fsPath);
                         } else {
-                            this._dataRefList.set(className, [filename.fsPath]);
+                            this.dataBackend._dataRefList.set(className, [filename.fsPath]);
                         }
-                        this._dataRefCount.set(className, this._dataRefCount.get(className)!+1);
+                        this.dataBackend._dataRefCount.set(className, this.dataBackend._dataRefCount.get(className)!+1);
                     }    
                 }
 
@@ -192,19 +196,19 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 
     saveToCache() {
 
-        let content =  JSON.stringify(Object.fromEntries(this._dataRefCount));
+        let content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataRefCount));
         fs.writeFileSync(this._cacheFilenamePrefix + "RefCount", content);
         console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "RefCount")}`);
 
-        content =  JSON.stringify(Object.fromEntries(this._dataRefList));
+        content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataRefList));
         fs.writeFileSync(this._cacheFilenamePrefix + "RefList", content);
         console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "RefList")}`);
 
-        content =  JSON.stringify(Object.fromEntries(this._dataParentClass));
+        content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataParentClass));
         fs.writeFileSync(this._cacheFilenamePrefix + "ParentClass", content);
         console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "ParentClass")}`);
 
-        content =  JSON.stringify(Object.fromEntries(this._dataHeaderFile));
+        content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataHeaderFile));
         fs.writeFileSync(this._cacheFilenamePrefix + "HeaderFile", content);
         console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "HeaderFile")}`);
     }
@@ -218,22 +222,22 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 
             let cacheRefCount = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "RefCount").toString());
             for (var value in cacheRefCount) {  
-                this._dataRefCount.set(value, cacheRefCount[value]);
+                this.dataBackend._dataRefCount.set(value, cacheRefCount[value]);
             }
 
             let cacheRefList = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "RefList").toString());
             for (var value in cacheRefList) {  
-                this._dataRefList.set(value, cacheRefList[value]);
+                this.dataBackend._dataRefList.set(value, cacheRefList[value]);
             }
 
             let cacheParentClass = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "ParentClass").toString());
             for (var value in cacheParentClass) {  
-                this._dataParentClass.set(value, cacheParentClass[value]);
+                this.dataBackend._dataParentClass.set(value, cacheParentClass[value]);
             }
 
             let cacheHeaderFile = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "HeaderFile").toString());
             for (var value in cacheHeaderFile) {  
-                this._dataHeaderFile.set(value, cacheHeaderFile[value]);
+                this.dataBackend._dataHeaderFile.set(value, cacheHeaderFile[value]);
             }
                         
             this._onDidChangeTreeData.fire();

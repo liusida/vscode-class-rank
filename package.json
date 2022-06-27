@@ -34,7 +34,12 @@
         {
           "id": "classesView",
           "type": "tree",
-          "name": "Classes"
+          "name": "Most Popular"
+        },
+        {
+          "id": "hierarchyView",
+          "type": "tree",
+          "name": "Hierarchy"
         }
       ]
     },
@@ -93,14 +98,16 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-	"@types/mkdirp": "^0.5.2",
-	"@types/node": "^16.11.7",
-	"@types/rimraf": "^2.0.2",
-	"@types/vscode": "^1.67.0",
-	"@typescript-eslint/eslint-plugin": "^5.19.0",
-	"@typescript-eslint/parser": "^5.19.0",
-	"eslint": "^8.13.0",
-	"typescript": "^4.7.2"
+    "@types/mkdirp": "^0.5.2",
+    "@types/node": "^16.11.7",
+    "@types/rimraf": "^2.0.2",
+    "@types/vscode": "^1.67.0",
+    "@typescript-eslint/eslint-plugin": "^5.19.0",
+    "@typescript-eslint/parser": "^5.19.0",
+    "eslint": "^8.13.0",
+    "typescript": "^4.7.2"
+  },
+  "dependencies": {
+    "typescript-graph": "^0.2.1"
   }
-
 }

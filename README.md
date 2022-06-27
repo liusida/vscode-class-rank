@@ -72,6 +72,9 @@ class FNvClothErrorCallback* GNvClothErrorCallback;
 		Class CurrentClass = self.class;
 ```
 
+Current solution:
+https://regex101.com/r/9ypUVa/1
+
 ## Issues
 
 There's only one copy of cache, so different workspace shares the same cache file (which is wrong).
