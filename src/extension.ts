@@ -17,7 +17,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		console.log("Error in dataProvider.refresh()");
 	}
 	const hierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
-	hierarchyDataProvider.test();
 	vscode.window.registerTreeDataProvider('hierarchyView', hierarchyDataProvider);
 
 	context.subscriptions.push(

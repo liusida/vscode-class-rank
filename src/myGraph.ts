@@ -2,23 +2,6 @@ import { DirectedGraph } from 'typescript-graph';
 type Edge = 1 | 0;
 
 export class MyGraph<T> extends DirectedGraph<T> {
-    // getAdj() : Array<Array<Edge>>{
-    //     return this.adjacency;
-    // }
-
-    // getChildren(parent:T): T[] {
-    //     let ret : T[] = [];
-    //     const parentId = Array.from(this.nodes.keys()).indexOf(parent);
-    //     const nodesArray = Array.from(this.nodes.values());
-    //     for (let [key,val] of this.adjacency[parentId]) {
-    //         if (val===1) {
-    //             ret.push(nodesArray[key]);
-    //         }
-    //     }
-
-    //     return ret;
-    // }
-
     addPairs(parent:T, child:T) {
         if (this.nodes.get(this.nodeIdentity(parent)) === undefined) {
             this.insert(parent);
@@ -28,6 +11,7 @@ export class MyGraph<T> extends DirectedGraph<T> {
         }
         this.addEdge(this.nodeIdentity(parent), this.nodeIdentity(child));
     }
+
     getRootIds():string[] {
         let rootNodeIdentities : string[] = [];
         const nodes = Array.from(this.nodes.keys());
@@ -59,6 +43,7 @@ export class MyGraph<T> extends DirectedGraph<T> {
         }
         return childrenNodeIdentities;
     }
+
     getNodeFromId(nodeIdentity:string):T|undefined {
         return this.nodes.get(nodeIdentity);
     }

@@ -3,7 +3,7 @@ import { MyTreeItem, SourceCodeClass } from './myTreeItem';
 import { MyGraph } from './myGraph';
 import {DataBackend} from './dataBackend';
 
-type NodeType = { name: string; count: number };
+type NodeType = { name: string; refCount: number };
 
 export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     dataBackend : DataBackend;
@@ -21,11 +21,13 @@ export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTre
         for (let [child, parent] of this.dataBackend._dataParentClass) {
             if (this.dataBackend._dataRefCount.get(child)! > 50
                 && this.dataBackend._dataRefCount.get(parent)! > 50) {
-                this.graph.addPairs({name: parent, count: this.dataBackend._dataRefCount.get(parent)!}, {name: child, count: this.dataBackend._dataRefCount.get(child)!});
+                this.graph.addPairs(
+                    {name: parent, refCount: this.dataBackend._dataRefCount.get(parent)!}, 
+                    {name: child, refCount: this.dataBackend._dataRefCount.get(child)!}
+                    );
             }
         }
-    }
-    test() {
+
     }
 
 	getTreeItem(element: MyTreeItem): vscode.TreeItem {
