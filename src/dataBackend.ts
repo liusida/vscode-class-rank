@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 export class DataBackend {
     // Map < className, refCount >
@@ -13,57 +14,78 @@ export class DataBackend {
     private _cacheFilenamePrefix : string = ".CLASSRANK.DATA.";
 
     saveToCache() {
+        let cacheFolder = vscode.workspace.getConfiguration("classrank.general").get("cacheFolder", "");
+        if ( vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders?.length>0 ) {
+            cacheFolder = cacheFolder.replace("${workspaceFolder}", vscode.workspace.workspaceFolders[0].uri.fsPath.toString());
+        }
 
         let content =  JSON.stringify(Object.fromEntries(this._dataRefCount));
-        fs.writeFileSync(this._cacheFilenamePrefix + "RefCount", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "RefCount")}`);
+        let cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "RefCount");
+        fs.writeFileSync(cachePath, content);
+        console.log(`Write to ${cachePath}`);
 
         content =  JSON.stringify(Object.fromEntries(this._dataRefList));
-        fs.writeFileSync(this._cacheFilenamePrefix + "RefList", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "RefList")}`);
+        cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "RefList");
+        fs.writeFileSync(cachePath, content);
+        console.log(`Write to ${cachePath}`);
 
         content =  JSON.stringify(Object.fromEntries(this._dataParentClass));
-        fs.writeFileSync(this._cacheFilenamePrefix + "ParentClass", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "ParentClass")}`);
+        cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "ParentClass");
+        fs.writeFileSync(cachePath, content);
+        console.log(`Write to ${cachePath}`);
 
         content =  JSON.stringify(Object.fromEntries(this._dataHeaderFile));
-        fs.writeFileSync(this._cacheFilenamePrefix + "HeaderFile", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "HeaderFile")}`);
+        cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "HeaderFile");
+        fs.writeFileSync(cachePath, content);
+        console.log(`Write to ${cachePath}`);
 
         content =  JSON.stringify(Object.fromEntries(this._dataHeaderFileQuote));
-        fs.writeFileSync(this._cacheFilenamePrefix + "HeaderFileQuote", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "HeaderFileQuote")}`);
+        cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "HeaderFileQuote");
+        fs.writeFileSync(cachePath, content);
+        console.log(`Write to ${cachePath}`);
     }
 
     loadFromCache() : boolean {
-        if(fs.existsSync(this._cacheFilenamePrefix + "RefCount") &&
-           fs.existsSync(this._cacheFilenamePrefix + "RefList") &&
-           fs.existsSync(this._cacheFilenamePrefix + "ParentClass")
+        let cacheFolder = vscode.workspace.getConfiguration("classrank.general").get("cacheFolder", "");
+        if ( vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders?.length>0 ) {
+            cacheFolder = cacheFolder.replace("${workspaceFolder}", vscode.workspace.workspaceFolders[0].uri.fsPath.toString());
+        }
+
+        if(fs.existsSync(path.join(cacheFolder, this._cacheFilenamePrefix + "RefCount")) &&
+           fs.existsSync(path.join(cacheFolder, this._cacheFilenamePrefix + "RefList")) &&
+           fs.existsSync(path.join(cacheFolder, this._cacheFilenamePrefix + "ParentClass")) &&
+           fs.existsSync(path.join(cacheFolder, this._cacheFilenamePrefix + "HeaderFile")) &&
+           fs.existsSync(path.join(cacheFolder, this._cacheFilenamePrefix + "HeaderFileQuote")) 
            ) {
             // Check that the file exists locally
             console.log("Read from cache file.");
 
-            let cacheRefCount = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "RefCount").toString());
+            let cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "RefCount");
+            let cacheRefCount = JSON.parse(fs.readFileSync(cachePath).toString());
             for (var value in cacheRefCount) {  
                 this._dataRefCount.set(value, cacheRefCount[value]);
             }
 
-            let cacheRefList = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "RefList").toString());
+            cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "RefList");
+            let cacheRefList = JSON.parse(fs.readFileSync(cachePath).toString());
             for (var value in cacheRefList) {  
                 this._dataRefList.set(value, cacheRefList[value]);
             }
 
-            let cacheParentClass = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "ParentClass").toString());
+            cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "ParentClass");
+            let cacheParentClass = JSON.parse(fs.readFileSync(cachePath).toString());
             for (var value in cacheParentClass) {  
                 this._dataParentClass.set(value, cacheParentClass[value]);
             }
 
-            let cacheHeaderFile = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "HeaderFile").toString());
+            cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "HeaderFile");
+            let cacheHeaderFile = JSON.parse(fs.readFileSync(cachePath).toString());
             for (var value in cacheHeaderFile) {  
                 this._dataHeaderFile.set(value, cacheHeaderFile[value]);
             }
 
-            let cacheHeaderFileQuote = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "HeaderFileQuote").toString());
+            cachePath = path.join(cacheFolder, this._cacheFilenamePrefix + "HeaderFileQuote");
+            let cacheHeaderFileQuote = JSON.parse(fs.readFileSync(cachePath).toString());
             for (var value in cacheHeaderFileQuote) {  
                 this._dataHeaderFileQuote.set(value, cacheHeaderFileQuote[value]);
             }

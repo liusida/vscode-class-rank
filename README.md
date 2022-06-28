@@ -79,7 +79,3 @@ https://regex101.com/r/HZ92ZL/1
 \nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\*:\n]*(?<!;)\n
 ```
 For simplicity, ignoring any double space / tab for now. 
-
-## Issues
-
-There's only one copy of cache, so different workspace shares the same cache file (which is wrong).

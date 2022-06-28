@@ -86,6 +86,11 @@
             "type": "string",
             "default": "\\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\\*:\\n]*(?<!;)\\n"
           },
+          "classrank.general.cacheFolder": {
+            "markdownDescription": "We store infomation about classes in a cache file",
+            "type": "string",
+            "default": "${workspaceFolder}/.vscode/"
+          },
           "classrank.general.findFile.includeFileNamePattern": {
             "markdownDescription": "Define what source files you want us to look into. Same pattern as VSCode's 'find in file' function.",
             "type": "string",

@@ -7,7 +7,7 @@
 
 - [ ] Filter?
 
-- [ ] Use Settings to Configure 
+- [x] Use Settings to Configure 
 - [ ] Learn to use webpack
 - [ ] Test Extension
 - [ ] Publish Extension
