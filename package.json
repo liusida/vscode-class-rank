@@ -23,14 +23,14 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "classes-view",
+          "id": "class-rank-sidebar",
           "title": "Class Rank",
           "icon": "media/ClassRank.svg"
         }
       ]
     },
     "views": {
-      "classes-view": [
+      "class-rank-sidebar": [
         {
           "id": "classesView",
           "type": "tree",
@@ -81,9 +81,15 @@
       {
         "title": "Class Rank",
         "properties": {
-          "classesView.rootPaths": {
-            "type": "Array<string>",
-            "default": false
+          "classrank.general.regexp": {
+            "markdownDescription": "Regular Expression for filtering out the classes from the source files. You can test this at https://regex101.com/r/HZ92ZL/1",
+            "type": "string",
+            "default": "\\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\\*:\\n]*(?<!;)\\n"
+          },
+          "classrank.hierarchyView.threshold": {
+            "markdownDescription": "The minimum number of references required for class to appear in hierarchy view.",
+            "type": "number",
+            "default": 50
           }
         }
       }

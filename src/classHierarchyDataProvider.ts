@@ -17,10 +17,12 @@ export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTre
         }
 
         this.graph = new MyGraph<NodeType>((n: NodeType) => n.name);
+        const threshold = vscode.workspace.getConfiguration("classrank.hierarchyView").get("threshold", 50);
 
         for (let [child, parent] of this.dataBackend._dataParentClass) {
-            if (this.dataBackend._dataRefCount.get(child)! > 50
-                && this.dataBackend._dataRefCount.get(parent)! > 50) {
+            if (this.dataBackend._dataRefCount.get(child)! > threshold
+                // && this.dataBackend._dataRefCount.get(parent)! > threshold
+                ) {
                 this.graph.addPairs(
                     {name: parent, refCount: this.dataBackend._dataRefCount.get(parent)!}, 
                     {name: child, refCount: this.dataBackend._dataRefCount.get(child)!}
@@ -28,6 +30,12 @@ export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTre
             }
         }
 
+        // make sure everything is connected.
+        for (let [child, parent] of this.dataBackend._dataParentClass) {
+            if (this.graph.getNodeFromId(child)!==undefined && this.graph.getNodeFromId(parent)!==undefined) {
+                this.graph.addEdge(parent, child);
+            }
+        }
     }
 
 	getTreeItem(element: MyTreeItem): vscode.TreeItem {
@@ -53,6 +61,7 @@ export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTre
                         this.dataBackend._dataRefCount.get(node.name)!, 
                         this.dataBackend._dataParentClass.get(node.name)!, 
                         this.dataBackend._dataHeaderFile.get(node.name)! ,
+                        this.dataBackend._dataHeaderFileQuote.get(node.name)! ,
                         cState));
         }
         ret.sort((a,b)=>{return refCounts.get(a.className)! - refCounts.get(b.className)!;}).reverse();

@@ -34,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('classRank.gotoHeaderFile', (args) => {
 			vscode.window.showTextDocument(vscode.Uri.file(args.headerFile)).then(()=>{
-				vscode.commands.executeCommand("editor.actions.findWithArgs", {"searchString": `${args.className} :`, "wholeWord": true, "matchCase": true}).then(()=>{
+				vscode.commands.executeCommand("editor.actions.findWithArgs", {"searchString": args.headerFileQuote.trim(), "matchWholeWord": true, "isCaseSensitive": true, "isRegex": true}).then(()=>{
 					vscode.commands.executeCommand("editor.action.nextMatchFindAction");
 				});
 			});
@@ -52,6 +52,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	context.subscriptions.push( vscode.workspace.onDidChangeConfiguration( ( e ) => {
+		if (e.affectsConfiguration("classrank.hierarchyView")) {
+			const hierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
+			vscode.window.registerTreeDataProvider('hierarchyView', hierarchyDataProvider);
+		}
+	}));
 }
 
 export function deactivate() {}

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import {MyTreeItem, SourceCodeReference, SourceCodeClass} from './myTreeItem';
 import {DataBackend} from './dataBackend';
 import {Utils} from './utils';
@@ -18,7 +17,6 @@ interface IParentClass {
 export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     private dataBackend:DataBackend;
     private _canceled : boolean = false;
-    private _cacheFilenamePrefix : string = ".CLASSRANK.DATA.";
 
     private _onDidChangeTreeData: vscode.EventEmitter<MyTreeItem | undefined | null | void> = new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
@@ -67,7 +65,11 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 
             let ret = [];
             for (let [className, refCount] of mapSorted) {
-                ret.push(new SourceCodeClass(className, refCount, this.dataBackend._dataParentClass.get(className)!, this.dataBackend._dataHeaderFile.get(className)! ));
+                ret.push(new SourceCodeClass(className, refCount, 
+                        this.dataBackend._dataParentClass.get(className)!, 
+                        this.dataBackend._dataHeaderFile.get(className)!,
+                        this.dataBackend._dataHeaderFileQuote.get(className)!
+                        ));
             }
             return Promise.resolve(ret);
 		}
@@ -89,7 +91,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 
         if (!force) {
             // if not forced, try load from cache first
-            if (this.loadFromCache()) {
+            if (this.dataBackend.loadFromCache()) {
                 // if load from cache succeed, simply leave.
                 return;
             }
@@ -117,8 +119,10 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             // (3) class ClassName
             // etc...
             // Maybe I should get a C++ parser.
-            let classNamePattern = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/g;
-            let classNamePatternItem = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/;
+            let classNamePattern = RegExp( vscode.workspace.getConfiguration("classrank.general").get("regexp", ""), "g");
+            let classNamePatternItem = RegExp( vscode.workspace.getConfiguration("classrank.general").get("regexp", ""));
+            // let classNamePattern = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/g;
+            // let classNamePatternItem = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/;
             let sourceFileNamePattern = '**/*.{c,h,cpp,hpp}';
             let excludeFileNamePattern = '**/{Intermediate/**,*.gen.*}';
             const allFileNames = await vscode.workspace.findFiles(sourceFileNamePattern, excludeFileNamePattern);
@@ -139,6 +143,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
                             this.dataBackend._dataRefCount.set(singleLineMatches[1], 0);
                             this.dataBackend._dataParentClass.set(singleLineMatches[1], singleLineMatches[2]);
                             this.dataBackend._dataHeaderFile.set(singleLineMatches[1], headerFile.fsPath);
+                            this.dataBackend._dataHeaderFileQuote.set(singleLineMatches[1], singleLineMatches[0]);
                         }
                     }
                 }
@@ -189,64 +194,11 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             this._onDidChangeTreeData.fire();
             console.log("Refreshed. All classes loaded.");
     
-            this.saveToCache();
+            this.dataBackend.saveToCache();
             return;
         });
     }
 
-    saveToCache() {
-
-        let content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataRefCount));
-        fs.writeFileSync(this._cacheFilenamePrefix + "RefCount", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "RefCount")}`);
-
-        content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataRefList));
-        fs.writeFileSync(this._cacheFilenamePrefix + "RefList", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "RefList")}`);
-
-        content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataParentClass));
-        fs.writeFileSync(this._cacheFilenamePrefix + "ParentClass", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "ParentClass")}`);
-
-        content =  JSON.stringify(Object.fromEntries(this.dataBackend._dataHeaderFile));
-        fs.writeFileSync(this._cacheFilenamePrefix + "HeaderFile", content);
-        console.log(`Write to ${path.resolve(__dirname, this._cacheFilenamePrefix + "HeaderFile")}`);
-    }
-    loadFromCache() : boolean {
-        if(fs.existsSync(this._cacheFilenamePrefix + "RefCount") &&
-           fs.existsSync(this._cacheFilenamePrefix + "RefList") &&
-           fs.existsSync(this._cacheFilenamePrefix + "ParentClass")
-           ) {
-            // Check that the file exists locally
-            console.log("Read from cache file.");
-
-            let cacheRefCount = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "RefCount").toString());
-            for (var value in cacheRefCount) {  
-                this.dataBackend._dataRefCount.set(value, cacheRefCount[value]);
-            }
-
-            let cacheRefList = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "RefList").toString());
-            for (var value in cacheRefList) {  
-                this.dataBackend._dataRefList.set(value, cacheRefList[value]);
-            }
-
-            let cacheParentClass = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "ParentClass").toString());
-            for (var value in cacheParentClass) {  
-                this.dataBackend._dataParentClass.set(value, cacheParentClass[value]);
-            }
-
-            let cacheHeaderFile = JSON.parse(fs.readFileSync(this._cacheFilenamePrefix + "HeaderFile").toString());
-            for (var value in cacheHeaderFile) {  
-                this.dataBackend._dataHeaderFile.set(value, cacheHeaderFile[value]);
-            }
-                        
-            this._onDidChangeTreeData.fire();
-            return true;
-        } else {
-            console.log("File not found");
-            return false;
-        }
-    }
 }
 
 //TODO: clean console.log

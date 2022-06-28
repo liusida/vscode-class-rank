@@ -73,7 +73,12 @@ class FNvClothErrorCallback* GNvClothErrorCallback;
 ```
 
 Current solution:
-https://regex101.com/r/9ypUVa/1
+https://regex101.com/r/HZ92ZL/1
+
+```re
+\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\*:\n]*(?<!;)\n
+```
+For simplicity, ignoring any double space / tab for now. 
 
 ## Issues
 

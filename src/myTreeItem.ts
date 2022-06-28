@@ -14,7 +14,8 @@ export class MyTreeItem extends vscode.TreeItem {
 
 export class SourceCodeClass extends MyTreeItem {
     headerFile : string;
-    constructor(className: string, refCount: number, parentClass: string, headerFile: string, collapsibleState?: vscode.TreeItemCollapsibleState | undefined) {
+    headerFileQuote: string;
+    constructor(className: string, refCount: number, parentClass: string, headerFile: string, headerFileQuote: string, collapsibleState?: vscode.TreeItemCollapsibleState | undefined) {
         if (collapsibleState===undefined) {
             super(className, className, vscode.TreeItemCollapsibleState.Collapsed);
         } else {
@@ -24,8 +25,13 @@ export class SourceCodeClass extends MyTreeItem {
             refCount = 0;
         }
         this.type = 'class';
-        this.description = `: ${parentClass} (${refCount})`;
+        if (parentClass===undefined) {
+            this.description = `(${refCount})`;
+        } else {
+            this.description = `: ${parentClass} (${refCount})`;
+        }
         this.headerFile = headerFile;
+        this.headerFileQuote = headerFileQuote;
         this.iconPath = {
             light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
             dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
