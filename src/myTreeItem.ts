@@ -14,8 +14,12 @@ export class MyTreeItem extends vscode.TreeItem {
 
 export class SourceCodeClass extends MyTreeItem {
     headerFile : string;
-    constructor(className: string, refCount: number, parentClass: string, headerFile: string) {
-        super(className, className, vscode.TreeItemCollapsibleState.Collapsed);
+    constructor(className: string, refCount: number, parentClass: string, headerFile: string, collapsibleState?: vscode.TreeItemCollapsibleState | undefined) {
+        if (collapsibleState===undefined) {
+            super(className, className, vscode.TreeItemCollapsibleState.Collapsed);
+        } else {
+            super(className, className, collapsibleState);
+        }
         if (!refCount) {
             refCount = 0;
         }

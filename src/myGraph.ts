@@ -12,8 +12,8 @@ export class MyGraph<T> extends DirectedGraph<T> {
         this.addEdge(this.nodeIdentity(parent), this.nodeIdentity(child));
     }
 
-    getRootIds():string[] {
-        let rootNodeIdentities : string[] = [];
+    getRoots():T[] {
+        let rootNodeIdentities : T[] = [];
         const nodes = Array.from(this.nodes.keys());
         const len = this.nodes.size;
         for (let i = 0; i < len; i++) {
@@ -25,20 +25,20 @@ export class MyGraph<T> extends DirectedGraph<T> {
                 }
             }
             if (!dirty) {
-                rootNodeIdentities.push(nodes[i]);
+                rootNodeIdentities.push(this.getNodeFromId(nodes[i])!);
             }
         }
         return rootNodeIdentities;
     }
 
-    getChildrenIds(nodeIdentity:string): string[] {
-        let childrenNodeIdentities : string[] = [];
+    getChildren(nodeIdentity:string): T[] {
+        let childrenNodeIdentities : T[] = [];
         const nodes = Array.from(this.nodes.keys());
         const nodeIndex = nodes.indexOf(nodeIdentity);
         const len = this.nodes.size;
         for (let i = 0; i < len; i++) {
             if (this.adjacency[nodeIndex][i]===1) {
-                childrenNodeIdentities.push(nodes[i]);
+                childrenNodeIdentities.push(this.getNodeFromId(nodes[i])!);
             }
         }
         return childrenNodeIdentities;

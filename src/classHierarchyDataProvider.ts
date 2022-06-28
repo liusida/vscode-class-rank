@@ -35,27 +35,27 @@ export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTre
 	}
 
 	getChildren(element?: MyTreeItem): Thenable<MyTreeItem[]> {
-        if (element === undefined) {
-            // ROOT
-            let ret = [];
-            for (let className of this.graph.getRootIds()) {
-                ret.push(new SourceCodeClass(className, 
-                            this.dataBackend._dataRefCount.get(className)!, 
-                            this.dataBackend._dataParentClass.get(className)!, 
-                            this.dataBackend._dataHeaderFile.get(className)! ));
-            }
-            return Promise.resolve(ret);
+        let ret : SourceCodeClass[] = [];
+        let refCounts : Map<string, number> = new Map<string, number>();
+        let nodes;
+        if (element===undefined) {
+            nodes = this.graph.getRoots();
         } else {
-            // Node
-            let ret = [];
-            for (let className of this.graph.getChildrenIds(element.className)) {
-                ret.push(new SourceCodeClass(className, 
-                            this.dataBackend._dataRefCount.get(className)!, 
-                            this.dataBackend._dataParentClass.get(className)!, 
-                            this.dataBackend._dataHeaderFile.get(className)! ));
-            }
-            return Promise.resolve(ret);
+            nodes = this.graph.getChildren(element.className);
         }
-         
+        for (let node of nodes) {
+            refCounts.set(node.name, node.refCount);
+            let cState = vscode.TreeItemCollapsibleState.None;
+            if (this.graph.getChildren(node.name).length>0) {
+                cState = vscode.TreeItemCollapsibleState.Expanded;
+            }
+            ret.push(new SourceCodeClass(node.name, 
+                        this.dataBackend._dataRefCount.get(node.name)!, 
+                        this.dataBackend._dataParentClass.get(node.name)!, 
+                        this.dataBackend._dataHeaderFile.get(node.name)! ,
+                        cState));
+        }
+        ret.sort((a,b)=>{return refCounts.get(a.className)! - refCounts.get(b.className)!;}).reverse();
+        return Promise.resolve(ret);
     }
 }
