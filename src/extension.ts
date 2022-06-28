@@ -16,15 +16,14 @@ export async function activate(context: vscode.ExtensionContext) {
 	} catch(err) {
 		console.log("Error in dataProvider.refresh()");
 	}
-	const hierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
-	vscode.window.registerTreeDataProvider('hierarchyView', hierarchyDataProvider);
+	const classHierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
+	vscode.window.registerTreeDataProvider('hierarchyView', classHierarchyDataProvider);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('classRank.refreshEntry', async () => {
 			try {
 				await dataProvider.refresh(true);
-				const hierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
-				vscode.window.registerTreeDataProvider('hierarchyView', hierarchyDataProvider);
+				classHierarchyDataProvider.refresh();
 			} catch(err) {
 				console.log("Error in dataProvider.refresh()");
 			}
@@ -54,8 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push( vscode.workspace.onDidChangeConfiguration( ( e ) => {
 		if (e.affectsConfiguration("classrank.hierarchyView")) {
-			const hierarchyDataProvider = new ClassHierarchyDataProvider(dataProvider.getDataBackend());
-			vscode.window.registerTreeDataProvider('hierarchyView', hierarchyDataProvider);
+			classHierarchyDataProvider.refresh();
 		}
 	}));
 }

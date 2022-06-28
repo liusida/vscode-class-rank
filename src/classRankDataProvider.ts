@@ -147,7 +147,7 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             let hitCount = 0;
             // const allClassNames = Array.from(this.dataBackend._dataRefCount.keys());
             const start = new Date().getTime();
-            const method = 3;
+            let method = 3;
             //TODO: pick a faster scan method.
             if (method===1) {
                 // slow method but straightfwd. saved here for confirmation.

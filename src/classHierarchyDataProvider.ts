@@ -9,6 +9,9 @@ export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTre
     dataBackend : DataBackend;
     graph: MyGraph<NodeType>;
 
+    private _onDidChangeTreeData: vscode.EventEmitter<MyTreeItem | undefined | null | void> = new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
 	constructor(backend?: DataBackend | undefined) {
         if (backend) {
             this.dataBackend = backend;
@@ -66,5 +69,9 @@ export class ClassHierarchyDataProvider implements vscode.TreeDataProvider<MyTre
         }
         ret.sort((a,b)=>{return refCounts.get(a.className)! - refCounts.get(b.className)!;}).reverse();
         return Promise.resolve(ret);
+    }
+
+    refresh(): void {
+      this._onDidChangeTreeData.fire();
     }
 }
