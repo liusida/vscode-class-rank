@@ -121,11 +121,13 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
             // Maybe I should get a C++ parser.
             let classNamePattern = RegExp( vscode.workspace.getConfiguration("classrank.general").get("regexp", ""), "g");
             let classNamePatternItem = RegExp( vscode.workspace.getConfiguration("classrank.general").get("regexp", ""));
+            let includeFileNamePattern = vscode.workspace.getConfiguration("classrank.general.findFile").get("includeFileNamePattern", "*.*");
+            let excludeFileNamePattern = vscode.workspace.getConfiguration("classrank.general.findFile").get("excludeFileNamePattern", undefined);
             // let classNamePattern = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/g;
             // let classNamePatternItem = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/;
-            let sourceFileNamePattern = '**/*.{c,h,cpp,hpp}';
-            let excludeFileNamePattern = '**/{Intermediate/**,*.gen.*}';
-            const allFileNames = await vscode.workspace.findFiles(sourceFileNamePattern, excludeFileNamePattern);
+            // let includeFileNamePattern = '**/*.{c,h,cpp,hpp}';
+            // let excludeFileNamePattern = '**/{Intermediate/**,*.gen.*}';
+            const allFileNames = await vscode.workspace.findFiles(includeFileNamePattern, excludeFileNamePattern);
             allFileNames.sort();
 
             let allFileContentInMemory = [];

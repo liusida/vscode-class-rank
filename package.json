@@ -86,6 +86,17 @@
             "type": "string",
             "default": "\\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\\*:\\n]*(?<!;)\\n"
           },
+          "classrank.general.findFile.includeFileNamePattern": {
+            "markdownDescription": "Define what source files you want us to look into. Same pattern as VSCode's 'find in file' function.",
+            "type": "string",
+            "default": "**/*.{c,h,cpp,hpp}"
+          },
+          "classrank.general.findFile.excludeFileNamePattern": {
+            "markdownDescription": "Define what source files you want us to exclude. Same pattern as VSCode's 'find in file' function.",
+            "type": "string",
+            "default": "**/{Intermediate/**,*.gen.*}"
+          },
+          
           "classrank.hierarchyView.threshold": {
             "markdownDescription": "The minimum number of references required for class to appear in hierarchy view.",
             "type": "number",
