@@ -82,9 +82,9 @@
         "title": "Class Rank",
         "properties": {
           "classrank.general.regexp": {
-            "markdownDescription": "Regular Expression for filtering out the classes from the source files. You can test this at https://regex101.com/r/X604BZ/1",
+            "markdownDescription": "Regular Expression for filtering out the classes from the source files. You can test this at https://regex101.com/r/7GX6dD/1",
             "type": "string",
-            "default": "\\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )(?:virtual )*([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\\*:\\n]*(?<!;)\\n"
+            "default": "\\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )(?:virtual )*([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\\*:\\r\\n]*(?<!;)(?:\\n|\\r\\n)"
           },
           "classrank.general.cacheFolder": {
             "markdownDescription": "We store infomation about classes in a cache file",
@@ -94,12 +94,12 @@
           "classrank.general.findFile.includeFileNamePattern": {
             "markdownDescription": "Define what source files you want us to look into. Same pattern as VSCode's 'find in file' function.",
             "type": "string",
-            "default": "**/*.{c,h,cpp,hpp}"
+            "default": "Engine/Source/Runtime/{Core,CoreUObject,Engine}/**/*.{h,cpp}"
           },
           "classrank.general.findFile.excludeFileNamePattern": {
             "markdownDescription": "Define what source files you want us to exclude. Same pattern as VSCode's 'find in file' function.",
             "type": "string",
-            "default": "**/{Intermediate/**,*.gen.*}"
+            "default": "ThirdParty,Intermediate,*.gen.*,Python"
           },
           
           "classrank.hierarchyView.threshold": {
