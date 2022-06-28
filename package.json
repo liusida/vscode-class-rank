@@ -2,7 +2,7 @@
   "name": "classrank",
   "displayName": "ClassRank",
   "description": "Ranking classes in source code, C++ by default, to provide an overview of a software project.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/liusida/vscode-class-rank.git"
