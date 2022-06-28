@@ -82,9 +82,9 @@
         "title": "Class Rank",
         "properties": {
           "classrank.general.regexp": {
-            "markdownDescription": "Regular Expression for filtering out the classes from the source files. You can test this at https://regex101.com/r/HZ92ZL/1",
+            "markdownDescription": "Regular Expression for filtering out the classes from the source files. You can test this at https://regex101.com/r/X604BZ/1",
             "type": "string",
-            "default": "\\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\\*:\\n]*(?<!;)\\n"
+            "default": "\\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )(?:virtual )*([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\\*:\\n]*(?<!;)\\n"
           },
           "classrank.general.cacheFolder": {
             "markdownDescription": "We store infomation about classes in a cache file",

@@ -1,0 +1,48 @@
+// method bundled:
+// 4.25 minutes past. 9750 / 9792 classes scanned. 94427 hit.
+
+
+            // for each file, check all possible classes.
+            // TODO: should we bundle the search, like search 50 class names at a time? will that save time?
+            const start = new Date().getTime();
+            let bundleIndex = 0;
+            let bundleClassNames : string[] = [];
+            for (const className of allClassNames) {
+                if (bundleIndex>10) {
+                    let pattern = '';
+                    for (let i=0;i<10;i++) {
+                        pattern += bundleClassNames[i] + '|';
+                    }
+                    pattern += bundleClassNames[10];
+                    let bundleRegexp = new RegExp(`[^a-zA-Z0-9](?:${pattern})[^a-zA-Z0-9]`);
+
+                    for (const index in allFileContentInMemory) {
+                        if (bundleRegexp.test(allFileContentInMemory[index])) {
+
+                            for (const inBundleClassName of bundleClassNames) {
+                                let regexp = new RegExp(`[^a-zA-Z0-9](${inBundleClassName})[^a-zA-Z0-9]`);
+                                if (regexp.test(allFileContentInMemory[index])) {
+                                    const filename = allFilenameInMemory[index];
+                                    hitCount++;
+                                    const list = this.dataBackend._dataRefList.get(inBundleClassName);
+                                    if (list!==undefined) {
+                                        list.push(filename);
+                                    } else {
+                                        this.dataBackend._dataRefList.set(inBundleClassName, [filename]);
+                                    }
+                                    this.dataBackend._dataRefCount.set(inBundleClassName, this.dataBackend._dataRefCount.get(inBundleClassName)!+1);
+                                }
+                            }
+
+                            
+                        }
+                    }
+                    bundleIndex = 0;
+                    bundleClassNames = [];
+                    
+                } else {
+                    bundleClassNames.push(className);
+                }
+                bundleIndex++;
+                
+                

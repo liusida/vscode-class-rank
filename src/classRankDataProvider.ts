@@ -112,21 +112,10 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 
             progress.report({ increment: 0 , message: "Please wait..."});
 
-            //TODO: need to come up with the right RegEx pattern!!!!
-            // I didn't consider:
-            // (1) : protected or : private,
-            // (2) ClassName final : 
-            // (3) class ClassName
-            // etc...
-            // Maybe I should get a C++ parser.
             let classNamePattern = RegExp( vscode.workspace.getConfiguration("classrank.general").get("regexp", ""), "g");
             let classNamePatternItem = RegExp( vscode.workspace.getConfiguration("classrank.general").get("regexp", ""));
             let includeFileNamePattern = vscode.workspace.getConfiguration("classrank.general.findFile").get("includeFileNamePattern", "*.*");
             let excludeFileNamePattern = vscode.workspace.getConfiguration("classrank.general.findFile").get("excludeFileNamePattern", undefined);
-            // let classNamePattern = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/g;
-            // let classNamePatternItem = /\n\s*class[\s[A-Za-z0-9_]*]*\s([A-Z][A-Za-z0-9_]+)\s+(?:final\s+)*:\s+(?:public|protected|private)\s+([A-Z][A-Za-z0-9_]*)/;
-            // let includeFileNamePattern = '**/*.{c,h,cpp,hpp}';
-            // let excludeFileNamePattern = '**/{Intermediate/**,*.gen.*}';
             const allFileNames = await vscode.workspace.findFiles(includeFileNamePattern, excludeFileNamePattern);
             allFileNames.sort();
 
@@ -156,48 +145,148 @@ export class ClassRankDataProvider implements vscode.TreeDataProvider<MyTreeItem
 
             console.log(`allFileContentInMemory.length = ${allFileContentInMemory.length}`);
             let hitCount = 0;
-            let fileProcessed = 0;
-            for (const index in allFileContentInMemory) {
-                const fileContent = allFileContentInMemory[index];
-                const filename = allFileNames[index];
-                // for each file, check all possible classes.
-                // TODO: should we bundle the search, like search 50 class names at a time? will that save time?
+            // const allClassNames = Array.from(this.dataBackend._dataRefCount.keys());
+            const start = new Date().getTime();
+            const method = 3;
+            //TODO: pick a faster scan method.
+            if (method===1) {
+                // slow method but straightfwd. saved here for confirmation.
+                let fileProcessed = 0;
+                for (const index in allFileContentInMemory) {
+                    for (const className of this.dataBackend._dataRefCount.keys()) {
+                        let r = new RegExp(`[^a-zA-Z0-9](${className})[^a-zA-Z0-9]`);
+                        if (r.test(allFileContentInMemory[index])) {
+                            const filename = allFileNames[index];
+                            hitCount++;
+                            const list = this.dataBackend._dataRefList.get(className);
+                            if (list) {
+                                list!.push(filename.fsPath);
+                            } else {
+                                this.dataBackend._dataRefList.set(className, [filename.fsPath]);
+                            }
+                            this.dataBackend._dataRefCount.set(className, this.dataBackend._dataRefCount.get(className)!+1);
+                        }    
+                    }
+
+                    fileProcessed++;
+                    const reportEverySteps = 100;
+                    if (fileProcessed%reportEverySteps===0) {
+                        let elapsed = new Date().getTime() - start;
+                        const percentage = 100 * reportEverySteps / allFileNames.length; // I'm not sure how the increment should be calculate, I thought it was percentage finished, it turns out to be percentage of each step.
+
+                        console.log(`${(elapsed/60000).toFixed(2)} minutes past. ${fileProcessed} / ${allFileNames.length} classes scanned. ${hitCount} hit.`);
+                        progress.report({increment: percentage, message: `${fileProcessed} / ${allFileNames.length} classes scanned. ${hitCount} hit.` });
+                        await Utils.delay(10);
+                    }
+
+                    if (this._canceled) {
+                        console.log("Canceled by user.");
+                        return;
+                    }
+                }
+            } else if (method===2) {
+                let classProcessed = 0;
                 for (const className of this.dataBackend._dataRefCount.keys()) {
                     let r = new RegExp(`[^a-zA-Z0-9](${className})[^a-zA-Z0-9]`);
-                    let m = fileContent.match(r);
-                    if (m) {
-                        hitCount++;
-                        const list = this.dataBackend._dataRefList.get(className);
-                        if (list) {
-                            list!.push(filename.fsPath);
-                        } else {
-                            this.dataBackend._dataRefList.set(className, [filename.fsPath]);
+                    for (const index in allFileContentInMemory) {
+                        if (r.test(allFileContentInMemory[index])) {
+                            const filename = allFileNames[index];
+                            hitCount++;
+                            const list = this.dataBackend._dataRefList.get(className);
+                            if (list) {
+                                list!.push(filename.fsPath);
+                            } else {
+                                this.dataBackend._dataRefList.set(className, [filename.fsPath]);
+                            }
+                            this.dataBackend._dataRefCount.set(className, this.dataBackend._dataRefCount.get(className)!+1);
+                        }    
+                    }
+
+                    classProcessed++;
+                    const reportEverySteps = 100;
+                    if (classProcessed%reportEverySteps===0) {
+                        let elapsed = new Date().getTime() - start;
+                        const percentage = 100 * reportEverySteps / this.dataBackend._dataRefCount.size; // I'm not sure how the increment should be calculate, I thought it was percentage finished, it turns out to be percentage of each step.
+
+                        console.log(`${(elapsed/60000).toFixed(2)} minutes past. ${classProcessed} / ${this.dataBackend._dataRefCount.size} classes scanned. ${hitCount} hit.`);
+                        progress.report({increment: percentage, message: `${classProcessed} / ${this.dataBackend._dataRefCount.size} classes scanned. ${hitCount} hit.` });
+                        await Utils.delay(10);
+                    }
+
+                    if (this._canceled) {
+                        console.log("Canceled by user.");
+                        return;
+                    }
+                }
+            } else if (method===3) {
+                const bundleSize = 20;
+                let classProcessed = 0;
+                let bundleIndex = 0;
+                let bundleClassNames : string[] = [];
+                const allClassNames = Array.from(this.dataBackend._dataRefCount.keys());
+                for (const className of allClassNames) {
+                    bundleClassNames.push(className);
+                    if (bundleIndex>bundleSize || classProcessed===allClassNames.length-1) {
+                        let pattern = '';
+                        for (let i=0;i<bundleClassNames.length;i++) {
+                            pattern += bundleClassNames[i] + '|';
                         }
-                        this.dataBackend._dataRefCount.set(className, this.dataBackend._dataRefCount.get(className)!+1);
-                    }    
-                }
+                        pattern = pattern.slice(undefined, pattern.length-1);
 
-                fileProcessed++;
-                const reportEverySteps = 500;
-                if (fileProcessed%reportEverySteps===0) {
-                    const percentage = Math.floor(100 * reportEverySteps / allFileNames.length); // I'm not sure how the increment should be calculate, I thought it was percentage finished, it turns out to be percentage of each step.
-
-                    console.log(`${fileProcessed} / ${allFileNames.length} files scanned. ${hitCount} hit.`);
-                    progress.report({increment: percentage, message: `${fileProcessed} / ${allFileNames.length} files scanned. ${hitCount} hit.` });
-                    await Utils.delay(10);
-                }
-
-                if (this._canceled) {
-                    console.log("Canceled by user.");
-                    return;
-                }
-            }
-
-            this._onDidChangeTreeData.fire();
-            console.log("Refreshed. All classes loaded.");
+                        let bundleRegexp = new RegExp(`[^a-zA-Z0-9](?:${pattern})[^a-zA-Z0-9]`);
     
-            this.dataBackend.saveToCache();
-            return;
+                        for (const index in allFileContentInMemory) {
+                            if (bundleRegexp.test(allFileContentInMemory[index])) {
+    
+                                for (const inBundleClassName of bundleClassNames) {
+                                    let regexp = new RegExp(`[^a-zA-Z0-9](${inBundleClassName})[^a-zA-Z0-9]`);
+                                    if (regexp.test(allFileContentInMemory[index])) {
+                                        const filename = allFilenameInMemory[index];
+                                        hitCount++;
+                                        const list = this.dataBackend._dataRefList.get(inBundleClassName);
+                                        if (list!==undefined) {
+                                            list.push(filename);
+                                        } else {
+                                            this.dataBackend._dataRefList.set(inBundleClassName, [filename]);
+                                        }
+                                        this.dataBackend._dataRefCount.set(inBundleClassName, this.dataBackend._dataRefCount.get(inBundleClassName)!+1);
+                                    }
+                                }
+    
+                                
+                            }
+                        }
+                        bundleIndex = 0;
+                        bundleClassNames = [];
+                        
+
+                    }
+                    bundleIndex++;
+
+                    classProcessed++;
+                    const reportEverySteps = 500;
+                    if (classProcessed%reportEverySteps===0) {
+                        let elapsed = new Date().getTime() - start;
+                        const percentage = 100 * reportEverySteps / this.dataBackend._dataRefCount.size; // I'm not sure how the increment should be calculate, I thought it was percentage finished, it turns out to be percentage of each step.
+
+                        console.log(`${(elapsed/60000).toFixed(2)} minutes past. ${classProcessed} / ${this.dataBackend._dataRefCount.size} classes scanned. ${hitCount} hit.`);
+                        progress.report({increment: percentage, message: `${classProcessed} / ${this.dataBackend._dataRefCount.size} classes scanned. ${hitCount} hit.` });
+                        await Utils.delay(10);
+                    }
+
+                    if (this._canceled) {
+                        console.log("Canceled by user.");
+                        return;
+                    }
+                    
+                }
+
+                this._onDidChangeTreeData.fire();
+                console.log("Refreshed. All classes loaded.");
+        
+                this.dataBackend.saveToCache();
+                return;
+            }
         });
     }
 
