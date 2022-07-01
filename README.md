@@ -19,6 +19,10 @@ This is a VSCode extension (because I use VSCode) written in Typescript. It is a
 
 This extension has not been published yet. There isn't a way to install that from VSCode extension market.
 
+You can download and install the VSIX file in `./vsix/` fodler. [How to](media/install_vsix.png).
+
+Or,
+
 You can follow the steps here: https://code.visualstudio.com/api/get-started/your-first-extension to open a debugging VSCode window that has loaded the extension.
 
 Basically, 
@@ -32,7 +36,7 @@ npm install
 
 (3) Use VSCode to open this project, and press F5 to start the debugging editor.
 
-## Usage
+## Debug
 
 After launch the debugging VSCode, open a project folder or a VSCode workspace file. Multi-folder workspace is supported.
 
@@ -46,7 +50,7 @@ Any form of contribution (including fixing my typo in this very README document)
 I hope we can make it faster, make the UI more understandable, and cover other common use cases such as ranking a Python project.
 
 
-## Issues
+## Methods
 
 Currently, I'm using Regular Expression to parse the source file. But different situations in the source code might be quite complicated, and will be too hard to use one single expression to cover.
 
@@ -73,9 +77,9 @@ class FNvClothErrorCallback* GNvClothErrorCallback;
 ```
 
 Current solution:
-https://regex101.com/r/HZ92ZL/1
+ https://regex101.com/r/7GX6dD/1
 
 ```re
-\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\*:\n]*(?<!;)\n
+\nclass (?:public |protected |private )*(?:[A-Z_]+ )*([A-Za-z0-9_]+)(?: final )*(?: *: (?:public |protected |private )(?:virtual )*([A-Za-z0-9_]+))*(?:<[^<]+>)*[^()\*:\n]*(?<!;)\n
 ```
 For simplicity, ignoring any double space / tab for now. 
